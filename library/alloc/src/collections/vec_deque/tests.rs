@@ -1060,6 +1060,16 @@ fn test_vec_from_vecdeque() {
 }
 
 #[test]
+fn test_prepend() {
+    let mut prependee: VecDeque<_> = vec![4, 5, 6].into();
+    let mut prepending: VecDeque<_> = vec![1, 2, 3].into();
+
+    prependee.prepend(&mut prepending);
+
+    assert_eq!(&prependee, &[1, 2, 3, 4, 5, 6]);
+}
+
+#[test]
 fn test_clone_from() {
     let m = vec![1; 8];
     let n = vec![2; 12];

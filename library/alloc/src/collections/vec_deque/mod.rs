@@ -2084,6 +2084,50 @@ impl<T, A: Allocator> VecDeque<T, A> {
         other.head = 0;
     }
 
+    /// Prepends all the elements of `other` to `self`, leaving `other` empty.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the new number of elements in self overflows a `usize`.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use std::collections::VecDeque;
+    /// let mut buf: VecDeque<_> = [3, 4].into();
+    /// let mut buf2: VecDeque<_> = [1, 2].into();
+    /// buf.prepend(&mut buf2);
+    ///
+    /// assert_eq!(buf, [1, 2, 3, 4]);
+    /// assert_eq!(buf2, []);
+    /// ```
+    #[inline]
+    #[track_caller]
+    pub fn prepend(&mut self, other: &mut Self)
+    where
+        T: Clone,
+    {
+        if T::IS_ZST {
+            self.len = self.len.checked_add(other.len()).expect("capacity overflow");
+            other.len = 0;
+            other.head = 0;
+            return;
+        }
+
+        // Ensure that we have enough capacity to hold the new elements.
+        self.reserve(other.len());
+        let new_head = self.wrap_sub(self.head, other.len());
+
+        let (left, right) = other.as_slices();
+        unsafe {
+            self.copy_slice(new_head, other);
+            self.copy_slice(self.wrap_add(new_head, left.len()), src);
+        }
+
+        self.head = new_head;
+        self.len += other.len();
+    }
+
     /// Retains only the elements specified by the predicate.
     ///
     /// In other words, remove all elements `e` for which `f(&e)` returns false.
